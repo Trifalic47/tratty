@@ -35,9 +35,11 @@ int main(int argc, char *argv[])
     pid = forkpty(&masterfd,NULL,NULL,NULL);
 
     if (pid == -1) {
+
+        tcsetattr(STDIN_FILENO,TCSANOW,&origional);
         perror("forkpty\n");
         exit(EXIT_FAILURE);
-    } else if (pid == 0) {
+    } else  if (pid == 0) { 
         // PTY slave (child process)
         execl("/bin/bash","bash",NULL);
         perror("execl");
@@ -51,22 +53,25 @@ int main(int argc, char *argv[])
             FD_ZERO(&readfds);
             FD_SET(STDIN_FILENO,&readfds);
             FD_SET(masterfd,&readfds);
-            
+
             int maxfds = (STDIN_FILENO > masterfd)
                 ?STDIN_FILENO
                 :masterfd;
 
             if (select(maxfds+1,&readfds,NULL,NULL,NULL) == -1) {
+
+                tcsetattr(STDIN_FILENO,TCSANOW,&origional);
                 perror("Select\n");
                 exit(EXIT_FAILURE);
             }
-                
+
             if (FD_ISSET(STDIN_FILENO,&readfds)) {
                 int c = read(STDIN_FILENO,buff,PAGE_SIZE);
                 if (c <= 0) break;
 
                 write(masterfd,buff,c);
-            } else if (FD_ISSET(masterfd,&readfds)) {
+            }
+            if (FD_ISSET(masterfd,&readfds)) {
                 int c = read(masterfd,buff,PAGE_SIZE);
                 if (c <= 0) break;
 
