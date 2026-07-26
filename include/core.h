@@ -7,10 +7,10 @@
 #include <termios.h>
 #include <stdlib.h>
 #include <fcntl.h>
-#include <SDL2/SDL.h>
 
 #define PAGE_SIZE 8192
 
 static int32_t masterfd;
 
 void enableRawMode(void);
+int terminal_init(void);
