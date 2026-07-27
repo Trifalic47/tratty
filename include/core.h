@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <fcntl.h>
 
-#define PAGE_SIZE 8192
+#define PAGE_SIZE 4096
 
 struct init_struct {
     pid_t pid;

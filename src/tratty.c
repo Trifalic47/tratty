@@ -1,8 +1,6 @@
 #include "../include/core.h"
 #include "../include/renderer.h"
-#include <SDL2/SDL_events.h>
-#include <stdlib.h>
-#include <unistd.h>
+#include "../include/screen.h"
 
 const SDL_Color WHITE = {255,255,255,255};
 
@@ -36,48 +34,51 @@ int main(int argc, char *argv[])
     fd_set readfds;
 
     bool running = true;
+
+    int cursor_row = 0;
+    int cursor_col = 0;
+
     while (running) {
         char buff[PAGE_SIZE];
         SDL_Event event;
 
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) running = false;
+            else if (event.type == SDL_KEYDOWN) {
+                char c = (char)event.key.keysym.sym;
+                write(terminal.masterfd,&c,1);
+            } else {
+                continue;
+            }
         }
 
         FD_ZERO(&readfds);
         FD_SET(terminal.masterfd,&readfds);
 
-        int max_fds = (STDIN_FILENO > terminal.masterfd)
-            ?STDIN_FILENO
-            :terminal.masterfd;
-
         struct timeval tv = {
             .tv_sec = 0,
-            .tv_usec = 1000,
+            .tv_usec = 10000,
         };
 
-        if (select(max_fds +1,&readfds,NULL,NULL,&tv) == -1) {
+        if (select(terminal.masterfd +1,&readfds,NULL,NULL,&tv) == -1) {
             tcsetattr(STDIN_FILENO,TCSANOW,&origional);
             perror("select\n");
             return EXIT_FAILURE;
         }
 
-
-
-        if (FD_ISSET(STDIN_FILENO,&readfds)) {
-            int c = read(STDIN_FILENO,buff,PAGE_SIZE);
-            if (c <= 0) break;
-
-            write(terminal.masterfd,buff,c);
-        }
         if (FD_ISSET(terminal.masterfd,&readfds)) {
-            int c = read(terminal.masterfd,buff,PAGE_SIZE);
-            if (c <= 0) break;
-
-            write(STDOUT_FILENO,buff,c);
+            ssize_t n = read(terminal.masterfd,buff,PAGE_SIZE);
+            if (n <= 0) break;
+            for (ssize_t i = 0; i<n; i++) {
+                screen[cursor_row][cursor_col].ch = buff[i];
+                cursor_col++;
+            }
         }
         SDL2_BEGIN_FRAME(conf.renderer,30,30,30,255);
-        TTF_RENDER_FONT(conf.renderer,font.font,WHITE,"Hello, World!",100,100,400,100);
+        for (int row = 0; row < ROWS;row++) {
+            for (int col = 0; col < COLS;col++) {
+            }
+        }
         SDL2_END_FRAME(conf.renderer);
     }
 
