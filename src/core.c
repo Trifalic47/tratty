@@ -15,22 +15,32 @@ void enableRawMode(void) {
     }
 }
 
-int terminal_init(void) {
+struct init_struct terminal_init(void) {
+    struct init_struct init;
     pid_t pid;
-    pid = forkpty(&masterfd,NULL,NULL,NULL);
+    pid = forkpty(&init.masterfd,NULL,NULL,NULL);
+    
+    init.pid = pid;
 
     if (pid == -1) {
         perror("forkpty\n");
-        return -1;
+        init.status = -1;
+        return init;
     } else  if (pid == 0) { 
         // PTY slave (child process)
 
         execl("/bin/bash","bash",NULL);
         perror("execl");
-        return -1;
+        init.status = -1;
+        return init;
     } else {
         // PTY master (parent process)
+        init.status = 0; 
+    }
+    return init;
+}
 
+/*
         fd_set readfds;
         while (1) {
             char buff[PAGE_SIZE];
@@ -63,6 +73,4 @@ int terminal_init(void) {
             }
 
         }
-    }
-    return 0;
-}
+        */

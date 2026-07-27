@@ -10,7 +10,11 @@
 
 #define PAGE_SIZE 8192
 
-static int32_t masterfd;
+struct init_struct {
+    pid_t pid;
+    int32_t masterfd;
+    int status;
+};
 
 void enableRawMode(void);
-int terminal_init(void);
+struct init_struct terminal_init(void);
