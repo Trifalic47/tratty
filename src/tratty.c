@@ -12,7 +12,7 @@ int main(int argc, char *argv[])
     enableRawMode();
 
     struct SDL2_Renderer conf;
-    conf = SDL2_INIT(SDL_WINDOWPOS_UNDEFINED,SDL_WINDOWPOS_UNDEFINED,600,800); 
+    conf = SDL2_INIT(SDL_WINDOWPOS_UNDEFINED,SDL_WINDOWPOS_UNDEFINED,700,1200); 
     if (conf.status == -1) {
         tcsetattr(STDIN_FILENO,TCSANOW,&origional);
     }
@@ -69,16 +69,22 @@ int main(int argc, char *argv[])
         if (FD_ISSET(terminal.masterfd,&readfds)) {
             ssize_t n = read(terminal.masterfd,buff,PAGE_SIZE);
             if (n <= 0) break;
-            for (ssize_t i = 0; i<n; i++) {
+            for (ssize_t i =0; i<n;i++) {
                 screen[cursor_row][cursor_col].ch = buff[i];
                 cursor_col++;
             }
         }
-        SDL2_BEGIN_FRAME(conf.renderer,30,30,30,255);
-        for (int row = 0; row < ROWS;row++) {
+        SDL2_BEGIN_FRAME(conf.renderer,0,0,0,255);
+        for (int row = 0;row<ROWS;row++) {
             for (int col = 0; col < COLS;col++) {
+                if (screen[row][col].ch == '\0') continue;
+                char text[2] = {
+                    screen[row][col].ch,
+                    '\0',
+                };
+                TTF_RENDER_FONT(conf.renderer,font.font,WHITE,text,col*20,row*40,20,40);
             }
-        }
+        };
         SDL2_END_FRAME(conf.renderer);
     }
 
