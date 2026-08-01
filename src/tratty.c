@@ -1,6 +1,7 @@
 #include "../include/core.h"
 #include "../include/renderer.h"
 #include "../include/screen.h"
+#include <SDL2/SDL_keycode.h>
 
 const SDL_Color WHITE = {255,255,255,255};
 
@@ -24,7 +25,7 @@ int main(int argc, char *argv[])
         perror("font init failed\n");
         return EXIT_FAILURE;
     }
-    
+
     struct init_struct terminal = terminal_init();
     if (terminal.status == -1) {
         tcsetattr(STDIN_FILENO,TCSANOW,&origional);
@@ -44,11 +45,22 @@ int main(int argc, char *argv[])
 
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) running = false;
-            else if (event.type == SDL_KEYDOWN) {
-                char c = (char)event.key.keysym.sym;
-                write(terminal.masterfd,&c,1);
-            } else {
-                continue;
+            if (event.type == SDL_KEYDOWN) {
+                switch (event.key.keysym.sym){
+                    case SDLK_BACKSPACE: {
+                        char c = 127;
+                        write(terminal.masterfd,&c,1);
+                        break;
+                    }
+                    case SDLK_RETURN:
+                        write(terminal.masterfd,"\n",1);
+                        break;
+                    default:
+                        break;
+                }
+            }
+            if (event.type == SDL_TEXTINPUT) {
+                write(terminal.masterfd,event.text.text,strlen(event.text.text));
             }
         }
 
@@ -70,8 +82,27 @@ int main(int argc, char *argv[])
             ssize_t n = read(terminal.masterfd,buff,PAGE_SIZE);
             if (n <= 0) break;
             for (ssize_t i =0; i<n;i++) {
-                screen[cursor_row][cursor_col].ch = buff[i];
-                cursor_col++;
+                switch (buff[i]) {
+                    case '\b':
+                        if (cursor_col > 0){
+                            cursor_col--;
+                            screen[cursor_row][cursor_col].ch = '\0';
+                }
+                        break;
+
+                    case '\r':
+                        cursor_col = 0;
+                        break;
+
+                    case '\n':
+                        cursor_row++;
+                        cursor_col = 0;
+                        break;
+
+                    default:
+                        screen[cursor_row][cursor_col].ch = buff[i];
+                        cursor_col++;
+                }
             }
         }
         SDL2_BEGIN_FRAME(conf.renderer,0,0,0,255);
@@ -88,12 +119,12 @@ int main(int argc, char *argv[])
         SDL2_END_FRAME(conf.renderer);
     }
 
+    tcsetattr(STDIN_FILENO,TCSANOW,&origional);
     SDL_DestroyRenderer(conf.renderer);
     SDL_DestroyWindow(conf.window);
     TTF_CloseFont(font.font);
     TTF_Quit();
     SDL_Quit();
 
-    tcsetattr(STDIN_FILENO,TCSANOW,&origional);
     return EXIT_SUCCESS;
 }

@@ -1,6 +1,4 @@
 #include "../include/core.h"
-#include <stdlib.h>
-
 
 void enableRawMode(void) {
     struct termios changed;     
