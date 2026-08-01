@@ -1,7 +1,6 @@
 #include "../include/core.h"
 #include "../include/renderer.h"
 #include "../include/screen.h"
-#include <SDL2/SDL_keycode.h>
 
 const SDL_Color WHITE = {255,255,255,255};
 
@@ -48,7 +47,7 @@ int main(int argc, char *argv[])
             if (event.type == SDL_KEYDOWN) {
                 switch (event.key.keysym.sym){
                     case SDLK_BACKSPACE: {
-                        char c = 127;
+                        char c = 0x7F;
                         write(terminal.masterfd,&c,1);
                         break;
                     }
@@ -82,26 +81,20 @@ int main(int argc, char *argv[])
             ssize_t n = read(terminal.masterfd,buff,PAGE_SIZE);
             if (n <= 0) break;
             for (ssize_t i =0; i<n;i++) {
-                switch (buff[i]) {
-                    case '\b':
-                        if (cursor_col > 0){
-                            cursor_col--;
-                            screen[cursor_row][cursor_col].ch = '\0';
-                }
-                        break;
-
-                    case '\r':
-                        cursor_col = 0;
-                        break;
-
-                    case '\n':
-                        cursor_row++;
-                        cursor_col = 0;
-                        break;
-
-                    default:
-                        screen[cursor_row][cursor_col].ch = buff[i];
-                        cursor_col++;
+                // printf("input: %c \t ASCII: %d \t hex: %02x \n",buff[i],(unsigned char)buff[i],(unsigned char)buff[i]);
+                if (buff[i] == 0x1B) {
+                    // ANSI parsing has to be done here..
+                } else if (buff[i] == '\b' || buff[i] == 0x08 || buff[i] == 0x07) {
+                    /* Handling backspace */
+                    printf("backspace triggered\n");
+                    cursor_col--;
+                } else if (buff[i] == '\n') { 
+                    // Handline newline 
+                    cursor_col = 0;
+                    cursor_row++;
+                } else {
+                    screen[cursor_row][cursor_col].ch = buff[i];
+                    cursor_col++;
                 }
             }
         }
