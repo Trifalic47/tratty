@@ -60,7 +60,7 @@ void SDL2_END_FRAME(SDL_Renderer *renderer) {
 }
 
 void TTF_RENDER_FONT(SDL_Renderer *renderer,TTF_Font *font,SDL_Color color,char *text,int x,int y,int w,int h) {
-    SDL_Surface *surface = TTF_RenderText_Solid(font,text,color);
+    SDL_Surface *surface = TTF_RenderUTF8_Solid(font,text,color);
     SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer,surface);
     SDL_Rect rect = {
         .h = h,

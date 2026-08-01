@@ -1,19 +1,21 @@
 # tratty
 
-An experimental, low-level pseudo-terminal (PTY) proxy and terminal emulator stub written in C.
+An experimental, low-level pseudo-terminal (PTY) emulator written in C using SDL2 and SDL2_ttf.
 
-`tratty` is currently in **early beta/development mode**. It sets up raw terminal interactions and multiplexes standard input/output directly with a spawned pseudo-terminal shell. The project includes dependency configurations for SDL2 and SDL2_ttf, paving the way for transition into a full GUI-rendered terminal emulator.
+`tratty` is currently in **development mode**. It has successfully transitioned from a standard CLI proxy into a graphical terminal emulator prototype. It spawns a pseudo-terminal shell and utilizes an SDL2 hardware-accelerated context to render an active character text grid, multiplexing inputs and outputs directly between system keyboard events and the background PTY process.
 
 ---
 
 ## 🚀 Features Implemented So Far
 
-- **PTY Session Spawning & Shell Execution**: Forks the process and sets up a new pseudo-terminal session (`forkpty`) executing `/bin/bash` with proper master/slave PTY routing.
-- **Asynchronous I/O Multiplexing**: Uses `select(2)` to monitor both the host terminal's input (`STDIN_FILENO`) and the master TTY's output (`masterfd`) in a non-blocking loop.
-- **TTY Raw Mode Toggle**: Programmatically changes the host terminal's line-discipline via `tcsetattr` (`enableRawMode()`) to disable canonical mode, echo, and default signal handlers. This ensures all keys and escape codes are captured directly.
-- **Clean State Recovery**: Gracefully restores the host terminal's original `termios` state upon program termination or on encountering errors.
-- **Graphic Engine Boilerplate**: Preconfigured to link against **SDL2** and **SDL2_ttf** (`Makefile` and `include/core.h`), preparing the architecture for transition to visual window rendering.
-- **Asset Bundling**: Includes a rich collection of high-quality monospace and nerd fonts (under `assets/fonts/`) intended for custom text-grid rendering.
+- **PTY Session Spawning & Shell Execution**: Forks the current process and establishes a pseudo-terminal session (`forkpty`) executing `/bin/bash` with full master/slave PTY routing.
+- **SDL2 Graphical Window Integration**: Discards terminal takeover in favor of an interactive GUI window context using hardware-accelerated rendering.
+- **Asynchronous I/O & Event Multiplexing**: Merges a non-blocking PTY reader thread utilizing `select(2)` with the SDL2 event loop (`SDL_PollEvent`) to handle real-time input/output concurrently.
+- **Character Grid Layout (Cell Matrix)**: Employs a fixed `24x80` grid (`screen[ROWS][COLS]` of custom `Cell` structures) to maintain terminal characters and viewport memory state.
+- **Text Cell Rendering**: Renders individual characters from the grid onto the window layout via `SDL2_ttf`, preconfigured to use JetBrains Mono Nerd Font for optimal monospaced rendering.
+- **Interactive Keyboard Input Mapping**: Captures GUI window event inputs via `SDL_TEXTINPUT` and raw key strokes (such as `BACKSPACE`, `RETURN`), writing them directly into the background shell.
+- **Basic Control Character Parser**: Decodes core stream control codes—specifically backspaces (`\b`), carriage returns (`\r`), and newlines (`\n`)—to coordinate cursor repositioning and manipulate grid character state.
+- **TTY Raw Mode Toggle & Recovery**: Safely configures the active host terminal's discipline via `tcsetattr` (`enableRawMode()`) and guarantees clean `termios` restoration on exit.
 
 ---
 
@@ -23,25 +25,31 @@ An experimental, low-level pseudo-terminal (PTY) proxy and terminal emulator stu
 tratty/
 ├── Makefile             # GCC compilation with SDL2 and SDL2_ttf linkage
 ├── include/
-│   └── core.h           # Shared headers, includes, page-size, and raw mode declaration
+│   ├── core.h           # Shared headers, raw mode, and PTY fork declarations
+│   ├── renderer.h       # SDL2 window context, framing, and ttf font rendering utilities
+│   └── screen.h         # Terminal dimension configuration and Cell struct definition
 ├── src/
-│   ├── core.c           # Raw mode terminal discipline utilities
-│   └── tratty.c         # TTY multiplexer & process fork main entry
+│   ├── core.c           # Raw mode terminal discipline utilities and PTY initialization
+│   ├── renderer.c       # SDL2 windowing, frame setup, and text-rendering implementation
+│   ├── screen.c         # Allocation of the character cell matrix (24x80 grid)
+│   └── tratty.c         # Main execution loop combining SDL2 poll, select(2) on PTY, and character parsing
 └── assets/
     └── fonts/           # Hand-picked font assets for terminal grid layout:
-        ├── CascadiaCove/
+        ├── Monocraft.ttc
+        ├── Perfect DOS VGA 437 Win.ttf
+        ├── Perfect DOS VGA 437.ttf
         ├── JetBrains/
-        ├── MapleMono/
-        ├── Mononoki/
-        ├── Noto_Sans/
-        └── ...
+        │   ├── JetBrains-Mono-Nerd-Font-Complete.ttf
+        │   └── JetBrainsMonoNerdFont-Regular.ttf
+        └── MapleMono/
+            └── ...
 ```
 
 ---
 
 ## 🛠️ Prerequisites
 
-To compile and run `tratty`, ensure you have the standard C build utilities and SDL2 development libraries installed.
+To compile and run `tratty`, ensure you have standard C build utilities and SDL2 development libraries installed.
 
 ### Debian / Ubuntu
 ```bash
@@ -73,11 +81,11 @@ make
 ```
 
 ### 2. Run the Application
-To run the compiled TTY shell wrapper:
+To run the compiled terminal emulator GUI:
 ```bash
 make run
 ```
-*Once running, you will be interacting directly with a raw-mode `/bin/bash` shell running inside the `tratty` PTY broker.*
+*Once running, an SDL2 window will open, routing user keyboard strokes to `/bin/bash` running inside the PTY and displaying text output in a custom monospace font grid.*
 
 ### 3. Clean Build Files
 To remove the compiled binary:
@@ -89,9 +97,9 @@ make clean
 
 ## 🗺️ Roadmap & Next Steps
 
-Currently, `tratty` runs as a raw terminal proxy, routing standard TTY input/output. The planned milestones for this project include:
+With basic GUI terminal rendering and input/output multiplexing in place, upcoming milestones include:
 
-1. **SDL2 Window Initialization**: Creating a GUI window context instead of taking over the active terminal.
-2. **Text Grid Layout & Cell Rendering**: Utilizing the bundled fonts in `assets/fonts/` with `SDL2_ttf` to render individual character cells on a texture grid.
-3. **VT100 / ANSI Escape Sequence Parser**: Implementing a parser to interpret terminal color codes, cursor movements, and text styling commands.
-4. **Input Handling & Custom Keymaps**: Capturing keyboard events via SDL2 events and translating them into standard ANSI sequences to send to the master TTY.
+1. **VT100 / ANSI Escape Sequence Parser**: Build a full ANSI escape sequence state machine parser to handle terminal color codes, text attributes (bold, underline), and cursor movement commands (e.g. `\e[H`, `\e[2J`).
+2. **Scrolling and History Buffer**: Add virtual screen buffers to capture off-grid historical content and allow scrollback navigation.
+3. **Dynamic Window Resizing**: Capture SDL window resize events to dynamically scale the character cell grid and notify the PTY child process (`ioctl` with `TIOCSWINSZ`).
+4. **Enhanced Keyboard Mapping**: Translate additional special keys (arrow keys, Esc, Ctrl, Alt, etc.) into standard ANSI escape sequences for proper CLI interaction.
