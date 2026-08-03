@@ -38,8 +38,8 @@ int main(int argc, char *argv[])
     int cursor_row = 0;
     int cursor_col = 0;
 
+    char buff[PAGE_SIZE];
     while (running) {
-        char buff[PAGE_SIZE];
         SDL_Event event;
 
         while (SDL_PollEvent(&event)) {
@@ -87,15 +87,17 @@ int main(int argc, char *argv[])
                 } else if (buff[i] == '\b' || buff[i] == 0x08 || buff[i] == 0x07) {
                     /* Handling backspace */
                     printf("backspace triggered\n");
+                    buff[i] = '\0';
+                    buff[i] = buff[i-1];
                     cursor_col--;
                 } else if (buff[i] == '\n') { 
                     // Handline newline 
                     cursor_col = 0;
                     cursor_row++;
-                } else {
-                    screen[cursor_row][cursor_col].ch = buff[i];
-                    cursor_col++;
-                }
+                } // else {
+                screen[cursor_row][cursor_col].ch = buff[i];
+                cursor_col++;
+                //}
             }
         }
         SDL2_BEGIN_FRAME(conf.renderer,0,0,0,255);
