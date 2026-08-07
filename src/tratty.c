@@ -62,6 +62,10 @@ int main(int argc, char *argv[])
                                          write(terminal.masterfd,&c,1);
                                          break;
                     }
+                    case SDLK_UP:
+                                     printf("Up detected\n");
+                                     char c[3] = {0x1B,0x5B,0x41};
+                                     write(terminal.masterfd,c,3);
                     default:
                                          break;
                 }
@@ -92,7 +96,11 @@ int main(int argc, char *argv[])
                 // printf("input: %c \t ASCII: %d \t hex: %02x \n",buff[i],(unsigned char)buff[i],(unsigned char)buff[i]);
                 if (buff[i] == 0x1B) {
                     /* TODO: ANSI parsing has to be done here */
-
+                    if (buff[i+1] == 0x5B) {
+                        if (buff[i+2] == 0x41) {
+                            printf("Move up detected\n");
+                        }
+                    }
                 } else if (buff[i] == '\b' || buff[i] == 0x08 || buff[i] == 0x07) {
                     if (cursor_col > 0)
                         cursor_col--;
