@@ -95,7 +95,7 @@ int main(int argc, char *argv[])
                 }
                 else if (buff[i] == '\t') {
                     int next_tab = (cursor_col + 8) & ~7;
-                    while (cursor_col < next_tab && cursor_col < COLS) {
+                    while (cursor_col < next_tab || cursor_col < COLS) {
                         screen[cursor_row][cursor_col].ch = ' ';
                         cursor_col++;
                     }
