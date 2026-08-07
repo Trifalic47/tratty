@@ -12,7 +12,7 @@ int main(int argc, char *argv[])
     enableRawMode();
 
     struct SDL2_Renderer conf;
-    conf = SDL2_INIT(SDL_WINDOWPOS_UNDEFINED,SDL_WINDOWPOS_UNDEFINED,700,1200); 
+    conf = SDL2_INIT(SDL_WINDOWPOS_UNDEFINED,SDL_WINDOWPOS_UNDEFINED,700,1200);
     if (conf.status == -1) {
         tcsetattr(STDIN_FILENO,TCSANOW,&origional);
     }
@@ -47,15 +47,17 @@ int main(int argc, char *argv[])
             if (event.type == SDL_KEYDOWN) {
                 switch (event.key.keysym.sym){
                     case SDLK_BACKSPACE: {
-                        char c = 0x7F;
-                        write(terminal.masterfd,&c,1);
-                        break;
-                    }
+                                             char c = 0x7F;
+                                             write(terminal.masterfd,&c,1);
+                                             break;
+                                         }
                     case SDLK_RETURN:
-                        write(terminal.masterfd,"\n",1);
-                        break;
+                                         write(terminal.masterfd,"\n",1);
+                                         break;
+                    case SDLK_TAB:
+                                         write(terminal.masterfd,"\t",1);
                     default:
-                        break;
+                                         break;
                 }
             }
             if (event.type == SDL_TEXTINPUT) {
@@ -83,16 +85,23 @@ int main(int argc, char *argv[])
             for (ssize_t i =0; i<n;i++) {
                 // printf("input: %c \t ASCII: %d \t hex: %02x \n",buff[i],(unsigned char)buff[i],(unsigned char)buff[i]);
                 if (buff[i] == 0x1B) {
-                    // ANSI parsing has to be done here..
+                    /* TODO: ANSI parsing has to be done here */
                 } else if (buff[i] == '\b' || buff[i] == 0x08 || buff[i] == 0x07) {
-                    /* Handling backspace */
                     if (cursor_col > 0)
                         cursor_col--;
-                } else if (buff[i] == '\n') { 
-                    // Handling newline 
+                } else if (buff[i] == '\n') {
                     cursor_col = 0;
                     cursor_row++;
-                } 
+                } else if (buff[i] == '\t' || buff[i]== 0x09) {
+                    /* BUG: This not adding spaces on tab but working with autocompletion */
+
+                    printf("tab else-if triggered\n");
+                    cursor_col = (cursor_col + 8) & ~7;
+                    if (cursor_col >= COLS) {
+                        cursor_col = 0;
+                        cursor_row++;
+                    }
+                }
                 if (isprint((unsigned char)buff[i])) {
                     screen[cursor_row][cursor_col].ch = buff[i];
                     cursor_col++;
