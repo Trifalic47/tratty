@@ -66,8 +66,25 @@ int main(int argc, char *argv[])
                                      printf("Up detected\n");
                                      char c[3] = {0x1B,0x5B,0x41};
                                      write(terminal.masterfd,c,3);
+                                     break;
+                    case SDLK_g:{
+                                    if (event.key.keysym.mod & KMOD_CTRL) {
+                                        char c = 0x0A;
+                                        write(terminal.masterfd,&c,1);
+                                        printf("\a");
+                                        fflush(STDIN_FILENO);
+                                    }
+                                    break;
+                                }
+                    case SDLK_l:{
+                                    if (event.key.keysym.mod && KMOD_CTRL) {
+                                        char c[4] = {0x1B,0x5B,0x32,0x4A};
+                                        write(terminal.masterfd,c,4);
+                                    }
+                                    break;
+                                }
                     default:
-                                         break;
+                                     break;
                 }
             }
             if (event.type == SDL_TEXTINPUT) {
@@ -89,6 +106,7 @@ int main(int argc, char *argv[])
             return EXIT_FAILURE;
         }
 
+        SDL2_BEGIN_FRAME(conf.renderer,0,0,0,255);
         if (FD_ISSET(terminal.masterfd,&readfds)) {
             ssize_t n = read(terminal.masterfd,buff,PAGE_SIZE);
             if (n <= 0) break;
@@ -98,7 +116,18 @@ int main(int argc, char *argv[])
                     /* TODO: ANSI parsing has to be done here */
                     if (buff[i+1] == 0x5B) {
                         if (buff[i+2] == 0x41) {
-                            printf("Move up detected\n");
+                            // Move up
+                        }
+                        else if (buff[i+2] == 0x32) {
+                            printf("0x32\n");
+                            if(buff[i+3] == 0x4A) {
+                                // clear ^L
+                                printf("clearing..\n");
+                                SDL2_BEGIN_FRAME(conf.renderer,0,0,0,255);
+                                cursor_col = 0;
+                                cursor_row = 0;
+                                SDL_RenderPresent(conf.renderer);
+                            }
                         }
                     }
                 } else if (buff[i] == '\b' || buff[i] == 0x08 || buff[i] == 0x07) {
@@ -121,7 +150,6 @@ int main(int argc, char *argv[])
                 }
             }
         }
-        SDL2_BEGIN_FRAME(conf.renderer,0,0,0,255);
         for (int row = 0;row<ROWS;row++) {
             for (int col = 0; col < COLS;col++) {
                 if (screen[row][col].ch == '\0') continue;
