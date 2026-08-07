@@ -56,6 +56,12 @@ int main(int argc, char *argv[])
                                          break;
                     case SDLK_TAB:
                                          write(terminal.masterfd,"\t",1);
+                                         break;
+                    case SDLK_ESCAPE:{
+                                         char c = 0x1B;
+                                         write(terminal.masterfd,&c,1);
+                                         break;
+                    }
                     default:
                                          break;
                 }
@@ -86,6 +92,7 @@ int main(int argc, char *argv[])
                 // printf("input: %c \t ASCII: %d \t hex: %02x \n",buff[i],(unsigned char)buff[i],(unsigned char)buff[i]);
                 if (buff[i] == 0x1B) {
                     /* TODO: ANSI parsing has to be done here */
+
                 } else if (buff[i] == '\b' || buff[i] == 0x08 || buff[i] == 0x07) {
                     if (cursor_col > 0)
                         cursor_col--;
