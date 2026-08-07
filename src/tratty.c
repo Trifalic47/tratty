@@ -92,16 +92,7 @@ int main(int argc, char *argv[])
                 } else if (buff[i] == '\n') {
                     cursor_col = 0;
                     cursor_row++;
-                } // else if (buff[i] == '\t' || buff[i]== 0x09) {
-                //     /* BUG: This not adding spaces on tab but working with autocompletion */
-                //
-                //     printf("tab else-if triggered\a\n");
-                //     cursor_col = (cursor_col + 8) & ~7;
-                //     if (cursor_col >= COLS) {
-                //         cursor_col = 0;
-                //         cursor_row++;
-                //     }
-                // }
+                }
                 else if (buff[i] == '\t') {
                     int next_tab = (cursor_col + 8) & ~7;
                     while (cursor_col < next_tab && cursor_col < COLS) {
