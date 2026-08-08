@@ -42,6 +42,7 @@ int main(int argc, char *argv[])
     while (running) {
         SDL_Event event;
 
+        SDL2_BEGIN_FRAME(conf.renderer,0,0,0,255);
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) running = false;
             if (event.type == SDL_KEYDOWN) {
@@ -78,7 +79,7 @@ int main(int argc, char *argv[])
                                 }
                     case SDLK_l:{
                                     if (event.key.keysym.mod && KMOD_CTRL) {
-                                        char ascii = 12;
+                                        char ascii = (unsigned char)12;
                                         write(terminal.masterfd,&ascii,1);
                                     }
                                     break;
@@ -106,7 +107,6 @@ int main(int argc, char *argv[])
             return EXIT_FAILURE;
         }
 
-        SDL2_BEGIN_FRAME(conf.renderer,0,0,0,255);
         if (FD_ISSET(terminal.masterfd,&readfds)) {
             ssize_t n = read(terminal.masterfd,buff,PAGE_SIZE);
             if (n <= 0) break;
@@ -117,13 +117,13 @@ int main(int argc, char *argv[])
                         if (buff[i+2] == 0x41) {
                             // Move up
                         }
-                        else if (buff[i+3] == 0x32) {
-                            if(buff[i+4] == 0x4A) {
+                        if (buff[i+2] == 0x32) {
+                            if(buff[i+3] == 0x4A) {
                                 // clear -> ^L
-                                printf("\nclearing..\n"); // Only using this printf for debugging
-                                SDL2_BEGIN_FRAME(conf.renderer,0,0,0,255);
                                 cursor_col = 0;
                                 cursor_row = 0;
+                                SDL2_BEGIN_FRAME(conf.renderer,0,0,0,255);
+                                memset(screen,0,sizeof(screen));
                             }
                         }
                     }
@@ -140,14 +140,7 @@ int main(int argc, char *argv[])
                         screen[cursor_row][cursor_col].ch = ' ';
                         cursor_col++;
                     }
-                } else if (buff[i] == 12) {
-                    printf("^L pressed\n");
-                    cursor_col = 0;
-                    cursor_row = 0;
-                    SDL_SetRenderDrawColor(conf.renderer,0,0,0,255);
-                    SDL_RenderClear(conf.renderer);
                 }
-
                 if (isprint((unsigned char)buff[i])) {
                     screen[cursor_row][cursor_col].ch = buff[i];
                     cursor_col++;
@@ -161,7 +154,7 @@ int main(int argc, char *argv[])
                     screen[row][col].ch,
                     '\0',
                 };
-                TTF_RENDER_FONT(conf.renderer,font.font,WHITE,text,col*20,row*40,20,40);
+                TTF_RENDER_FONT(conf.renderer,font.font,WHITE,text,col*20,row*40,20,40,&font);
             }
         };
         SDL2_END_FRAME(conf.renderer);
