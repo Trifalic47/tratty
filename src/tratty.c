@@ -110,10 +110,12 @@ int main(int argc, char *argv[])
         if (FD_ISSET(terminal.masterfd,&readfds)) {
             ssize_t n = read(terminal.masterfd,buff,PAGE_SIZE);
             if (n <= 0) break;
+
             for (ssize_t i =0; i<n;i++) {
                 // printf("input: %c \t ASCII: %d \t hex: %02x \n",buff[i],(unsigned char)buff[i],(unsigned char)buff[i]);
                 if (buff[i] == 0x1B) {
                     if (buff[i+1] == 0x5B) { // [
+
                         if (buff[i+2] == 0x41) {
                             // Move up
                         } else if (buff[i+2] == 0x32) {
@@ -128,6 +130,7 @@ int main(int argc, char *argv[])
                                 memset(screen,0,sizeof(screen));
                             }
                         } else if (buff[i+2] == 0x33) {
+
                             if(buff[i+3] == 0x4A) {
                                 // clear -> ^L
                                 cursor_col = 0;
@@ -138,7 +141,9 @@ int main(int argc, char *argv[])
                                 SDL2_BEGIN_FRAME(conf.renderer,0,0,0,255);
                                 memset(screen,0,sizeof(screen));
                             }
+
                         } else if (buff[i+2]==0x3f) { // ?
+
                             if (buff[i+3] == 0x32) {
                                 if(buff[i+4] == 0x30) {
                                     if (buff[i+5] == 0x30) {
