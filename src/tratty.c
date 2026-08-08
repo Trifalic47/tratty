@@ -84,6 +84,15 @@ int main(int argc, char *argv[])
                                     }
                                     break;
                                 }
+                    case SDLK_v: {
+                                    if (event.key.keysym.mod && KMOD_CTRL) {
+                                        if (SDL_HasClipboardText()) {
+                                            printf("%s\n",SDL_GetClipboardText());
+                                            write(terminal.masterfd,SDL_GetClipboardText(),strlen(SDL_GetClipboardText())+1);
+                                        }
+                                    }
+                                    break;
+                                 }
                     default:
                                 break;
                 }
@@ -123,21 +132,15 @@ int main(int argc, char *argv[])
                                 // clear -> ^L
                                 cursor_col = 0;
                                 cursor_row = 0;
-                                buff[i+1] = '\0';
-                                buff[i+2] = '\0';
-                                buff[i+3] = '\0';
                                 SDL2_BEGIN_FRAME(conf.renderer,0,0,0,255);
                                 memset(screen,0,sizeof(screen));
                             }
                         } else if (buff[i+2] == 0x33) {
 
                             if(buff[i+3] == 0x4A) {
-                                // clear -> ^L
+                                // move cursor to left..
                                 cursor_col = 0;
                                 cursor_row = 0;
-                                buff[i+1] = '\0';
-                                buff[i+2] = '\0';
-                                buff[i+3] = '\0';
                                 SDL2_BEGIN_FRAME(conf.renderer,0,0,0,255);
                                 memset(screen,0,sizeof(screen));
                             }
@@ -150,12 +153,7 @@ int main(int argc, char *argv[])
                                         if (buff [i+6] == 0x34) {
                                             // [?2004
                                             // char hex[5] = {0x3f,0x32,0x30,0x30,0x34};
-                                            buff[i+1]  = '\0';
-                                            buff[i+2]  = '\0';
-                                            buff[i+3]  = '\0';
-                                            buff[i+4]  = '\0';
-                                            buff[i+5]  = '\0';
-                                            buff[i+6]  = '\0';
+
                                         }
                                     }
                                 }
