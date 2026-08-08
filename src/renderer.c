@@ -39,6 +39,8 @@ void SDL2_BEGIN_FRAME(SDL_Renderer *renderer,Uint8 r,Uint8 g,Uint8 b,Uint8 a) {
 
 struct TTF_FONT_STRUCT SDL2_TTF_FONT_INIT(char *path,int size) {
     struct TTF_FONT_STRUCT fconf;
+    fconf.surface = NULL;
+    fconf.texture = NULL;
     if (TTF_Init() == -1) {
         fconf.status = -1;
         printf("%s\n",TTF_GetError());
@@ -59,9 +61,11 @@ void SDL2_END_FRAME(SDL_Renderer *renderer) {
     SDL_RenderPresent(renderer);
 }
 
-void TTF_RENDER_FONT(SDL_Renderer *renderer,TTF_Font *font,SDL_Color color,char *text,int x,int y,int w,int h) {
+void TTF_RENDER_FONT(SDL_Renderer *renderer,TTF_Font *font,SDL_Color color,char *text,int x,int y,int w,int h,struct TTF_FONT_STRUCT *font_struct) {
     SDL_Surface *surface = TTF_RenderUTF8_Solid(font,text,color);
     SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer,surface);
+    font_struct->surface = surface;
+    font_struct->texture = texture;
     SDL_Rect rect = {
         .h = h,
         .w = w,

@@ -18,7 +18,7 @@ int main(int argc, char *argv[])
     }
 
     struct TTF_FONT_STRUCT font;
-    font = SDL2_TTF_FONT_INIT("assets/fonts/JetBrains/JetBrainsMonoNerdFont-Regular.ttf",40);
+    font = SDL2_TTF_FONT_INIT("assets/fonts/JetBrains/JetBrainsMonoNerdFont-Regular.ttf",25);
     if (font.status == -1) {
         tcsetattr(STDIN_FILENO,TCSANOW,&origional);
         perror("font init failed\n");
@@ -42,6 +42,7 @@ int main(int argc, char *argv[])
     while (running) {
         SDL_Event event;
 
+        SDL2_BEGIN_FRAME(conf.renderer,0,0,0,255);
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) running = false;
             if (event.type == SDL_KEYDOWN) {
@@ -56,8 +57,35 @@ int main(int argc, char *argv[])
                                          break;
                     case SDLK_TAB:
                                          write(terminal.masterfd,"\t",1);
-                    default:
                                          break;
+                    case SDLK_ESCAPE:{
+                                         char c = 0x1B;
+                                         write(terminal.masterfd,&c,1);
+                                         break;
+                                     }
+                    case SDLK_UP:
+                                     printf("Up detected\n");
+                                     char c[3] = {0x1B,0x5B,0x41};
+                                     write(terminal.masterfd,c,3);
+                                     break;
+                    case SDLK_g:{
+                                    if (event.key.keysym.mod & KMOD_CTRL) {
+                                        char c = 0x0A;
+                                        write(terminal.masterfd,&c,1);
+                                        printf("\a");
+                                        fflush(STDIN_FILENO);
+                                    }
+                                    break;
+                                }
+                    case SDLK_l:{
+                                    if (event.key.keysym.mod && KMOD_CTRL) {
+                                        char ascii = (unsigned char)12;
+                                        write(terminal.masterfd,&ascii,1);
+                                    }
+                                    break;
+                                }
+                    default:
+                                break;
                 }
             }
             if (event.type == SDL_TEXTINPUT) {
@@ -85,7 +113,50 @@ int main(int argc, char *argv[])
             for (ssize_t i =0; i<n;i++) {
                 // printf("input: %c \t ASCII: %d \t hex: %02x \n",buff[i],(unsigned char)buff[i],(unsigned char)buff[i]);
                 if (buff[i] == 0x1B) {
-                    /* TODO: ANSI parsing has to be done here */
+                    if (buff[i+1] == 0x5B) { // [
+                        if (buff[i+2] == 0x41) {
+                            // Move up
+                        } else if (buff[i+2] == 0x32) {
+                            if(buff[i+3] == 0x4A) {
+                                // clear -> ^L
+                                cursor_col = 0;
+                                cursor_row = 0;
+                                buff[i+1] = '\0';
+                                buff[i+2] = '\0';
+                                buff[i+3] = '\0';
+                                SDL2_BEGIN_FRAME(conf.renderer,0,0,0,255);
+                                memset(screen,0,sizeof(screen));
+                            }
+                        } else if (buff[i+2] == 0x33) {
+                            if(buff[i+3] == 0x4A) {
+                                // clear -> ^L
+                                cursor_col = 0;
+                                cursor_row = 0;
+                                buff[i+1] = '\0';
+                                buff[i+2] = '\0';
+                                buff[i+3] = '\0';
+                                SDL2_BEGIN_FRAME(conf.renderer,0,0,0,255);
+                                memset(screen,0,sizeof(screen));
+                            }
+                        } else if (buff[i+2]==0x3f) { // ?
+                            if (buff[i+3] == 0x32) {
+                                if(buff[i+4] == 0x30) {
+                                    if (buff[i+5] == 0x30) {
+                                        if (buff [i+6] == 0x34) {
+                                            // [?2004
+                                            // char hex[5] = {0x3f,0x32,0x30,0x30,0x34};
+                                            buff[i+1]  = '\0';
+                                            buff[i+2]  = '\0';
+                                            buff[i+3]  = '\0';
+                                            buff[i+4]  = '\0';
+                                            buff[i+5]  = '\0';
+                                            buff[i+6]  = '\0';
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                 } else if (buff[i] == '\b' || buff[i] == 0x08 || buff[i] == 0x07) {
                     if (cursor_col > 0)
                         cursor_col--;
@@ -106,7 +177,6 @@ int main(int argc, char *argv[])
                 }
             }
         }
-        SDL2_BEGIN_FRAME(conf.renderer,0,0,0,255);
         for (int row = 0;row<ROWS;row++) {
             for (int col = 0; col < COLS;col++) {
                 if (screen[row][col].ch == '\0') continue;
@@ -114,7 +184,7 @@ int main(int argc, char *argv[])
                     screen[row][col].ch,
                     '\0',
                 };
-                TTF_RENDER_FONT(conf.renderer,font.font,WHITE,text,col*20,row*40,20,40);
+                TTF_RENDER_FONT(conf.renderer,font.font,WHITE,text,col*20,row*40,20,40,&font);
             }
         };
         SDL2_END_FRAME(conf.renderer);
