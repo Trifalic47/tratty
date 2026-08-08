@@ -87,7 +87,6 @@ int main(int argc, char *argv[])
                     case SDLK_v: {
                                     if (event.key.keysym.mod && KMOD_CTRL) {
                                         if (SDL_HasClipboardText()) {
-                                            printf("%s\n",SDL_GetClipboardText());
                                             write(terminal.masterfd,SDL_GetClipboardText(),strlen(SDL_GetClipboardText())+1);
                                         }
                                     }
@@ -124,7 +123,6 @@ int main(int argc, char *argv[])
                 // printf("input: %c \t ASCII: %d \t hex: %02x \n",buff[i],(unsigned char)buff[i],(unsigned char)buff[i]);
                 if (buff[i] == 0x1B) {
                     if (buff[i+1] == 0x5B) { // [
-
                         if (buff[i+2] == 0x41) {
                             // Move up
                         } else if (buff[i+2] == 0x32) {
@@ -153,7 +151,11 @@ int main(int argc, char *argv[])
                                         if (buff [i+6] == 0x34) {
                                             // [?2004
                                             // char hex[5] = {0x3f,0x32,0x30,0x30,0x34};
-
+                                            if (SDL_HasClipboardText()) {
+                                                char *text = SDL_GetClipboardText();
+                                                char final_text[strlen(text)+13];
+                                                snprintf(final_text,sizeof(final_text),"\e[200~%s\e[201~",text);
+                                            }
                                         }
                                     }
                                 }
@@ -174,7 +176,7 @@ int main(int argc, char *argv[])
                         cursor_col++;
                     }
                 }
-                if (isprint((unsigned char)buff[i])) {
+                if (isprint((unsigned char)buff[i]) && buff[i]) {
                     screen[cursor_row][cursor_col].ch = buff[i];
                     cursor_col++;
                 }
