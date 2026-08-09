@@ -35,6 +35,9 @@ int main(int argc, char *argv[])
 
     bool running = true;
 
+    // Terminal state boolean variables
+    bool bracketed_paste = false;
+
     int cursor_row = 0;
     int cursor_col = 0;
 
@@ -84,8 +87,24 @@ int main(int argc, char *argv[])
                                     }
                                     break;
                                 }
+                    case SDLK_v: {
+                                     if (event.key.keysym.mod & KMOD_CTRL) {
+                                         if (SDL_HasClipboardText()) {
+                                             char *clipboard_text = SDL_GetClipboardText();
+                                             if (bracketed_paste) {
+                                                char final_text[strlen(clipboard_text)+12];
+                                                snprintf(final_text,strlen(final_text),"\e[200~%s\e[201~",clipboard_text);
+                                                write(terminal.masterfd,final_text,sizeof(final_text));
+                                             }
+                                             else {
+                                                 write(terminal.masterfd,clipboard_text,strlen(clipboard_text));
+                                             }
+                                         }
+                                     }
+                                     break;
+                                 }
                     default:
-                                break;
+                                 break;
                 }
             }
             if (event.type == SDL_TEXTINPUT) {
@@ -110,52 +129,13 @@ int main(int argc, char *argv[])
         if (FD_ISSET(terminal.masterfd,&readfds)) {
             ssize_t n = read(terminal.masterfd,buff,PAGE_SIZE);
             if (n <= 0) break;
+
             for (ssize_t i =0; i<n;i++) {
                 // printf("input: %c \t ASCII: %d \t hex: %02x \n",buff[i],(unsigned char)buff[i],(unsigned char)buff[i]);
                 if (buff[i] == 0x1B) {
-                    if (buff[i+1] == 0x5B) { // [
-                        if (buff[i+2] == 0x41) {
-                            // Move up
-                        } else if (buff[i+2] == 0x32) {
-                            if(buff[i+3] == 0x4A) {
-                                // clear -> ^L
-                                cursor_col = 0;
-                                cursor_row = 0;
-                                buff[i+1] = '\0';
-                                buff[i+2] = '\0';
-                                buff[i+3] = '\0';
-                                SDL2_BEGIN_FRAME(conf.renderer,0,0,0,255);
-                                memset(screen,0,sizeof(screen));
-                            }
-                        } else if (buff[i+2] == 0x33) {
-                            if(buff[i+3] == 0x4A) {
-                                // clear -> ^L
-                                cursor_col = 0;
-                                cursor_row = 0;
-                                buff[i+1] = '\0';
-                                buff[i+2] = '\0';
-                                buff[i+3] = '\0';
-                                SDL2_BEGIN_FRAME(conf.renderer,0,0,0,255);
-                                memset(screen,0,sizeof(screen));
-                            }
-                        } else if (buff[i+2]==0x3f) { // ?
-                            if (buff[i+3] == 0x32) {
-                                if(buff[i+4] == 0x30) {
-                                    if (buff[i+5] == 0x30) {
-                                        if (buff [i+6] == 0x34) {
-                                            // [?2004
-                                            // char hex[5] = {0x3f,0x32,0x30,0x30,0x34};
-                                            buff[i+1]  = '\0';
-                                            buff[i+2]  = '\0';
-                                            buff[i+3]  = '\0';
-                                            buff[i+4]  = '\0';
-                                            buff[i+5]  = '\0';
-                                            buff[i+6]  = '\0';
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                    if (buff[i+1] == 0x5B) {
+                        char final_byte = buff[strlen(buff)-1];
+                        char *param = get_param(buff,i);
                     }
                 } else if (buff[i] == '\b' || buff[i] == 0x08 || buff[i] == 0x07) {
                     if (cursor_col > 0)
@@ -171,7 +151,7 @@ int main(int argc, char *argv[])
                         cursor_col++;
                     }
                 }
-                if (isprint((unsigned char)buff[i])) {
+                if (isprint((unsigned char)buff[i]) && buff[i]) {
                     screen[cursor_row][cursor_col].ch = buff[i];
                     cursor_col++;
                 }

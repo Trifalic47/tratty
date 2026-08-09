@@ -76,4 +76,3 @@ void TTF_RENDER_FONT(SDL_Renderer *renderer,TTF_Font *font,SDL_Color color,char 
     SDL_FreeSurface(surface);
     SDL_DestroyTexture(texture);
 }
-
