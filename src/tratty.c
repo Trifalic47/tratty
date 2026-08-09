@@ -133,48 +133,9 @@ int main(int argc, char *argv[])
             for (ssize_t i =0; i<n;i++) {
                 // printf("input: %c \t ASCII: %d \t hex: %02x \n",buff[i],(unsigned char)buff[i],(unsigned char)buff[i]);
                 if (buff[i] == 0x1B) {
-                    if (buff[i+1] == 0x5B) { // [
-                        if (buff[i+2] == 0x41) {
-                            // Move up
-                        } else if (buff[i+2] == 0x32) {
-                            if(buff[i+3] == 0x4A) {
-                                // clear -> ^L
-                                cursor_col = 0;
-                                cursor_row = 0;
-                                SDL2_BEGIN_FRAME(conf.renderer,0,0,0,255);
-                                memset(screen,0,sizeof(screen));
-                                i += 4;
-                            }
-                        }if (buff[i+2] == 0x33) {
-
-                            if(buff[i+3] == 0x4A) {
-                                // move cursor to left..
-                                i += 4;
-                                cursor_col = 0;
-                                cursor_row = 0;
-                                SDL2_BEGIN_FRAME(conf.renderer,0,0,0,255);
-                                memset(screen,0,sizeof(screen));
-                            }
-
-                        } else if (buff[i+2]==0x3f) { // ?
-
-                            if (buff[i+3] == 0x32) {
-                                if(buff[i+4] == 0x30) {
-                                    if (buff[i+5] == 0x30) {
-                                        if (buff [i+6] == 0x34) {
-                                            if (buff[i+7] == 0x68) {
-                                                // [?2004h
-                                                bracketed_paste = true;
-                                                i += 8;
-                                            } else if (buff[i+7] == 0x6C) {
-                                                bracketed_paste = false;
-                                                i += 8;
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                    if (buff[i+1] == 0x5B) {
+                        char final_byte = buff[strlen(buff)-1];
+                        char *param = get_param(buff,i);
                     }
                 } else if (buff[i] == '\b' || buff[i] == 0x08 || buff[i] == 0x07) {
                     if (cursor_col > 0)

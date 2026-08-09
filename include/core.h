@@ -7,6 +7,7 @@
 #include <termios.h>
 #include <stdlib.h>
 #include <fcntl.h>
+#include <string.h>
 
 #define PAGE_SIZE 4096
 
@@ -18,3 +19,4 @@ struct init_struct {
 
 void enableRawMode(void);
 struct init_struct terminal_init(void);
+char * get_param(char *ansi,int idx);
