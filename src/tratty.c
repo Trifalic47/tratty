@@ -35,6 +35,9 @@ int main(int argc, char *argv[])
 
     bool running = true;
 
+    // Terminal state boolean variables
+    bool bracketed_paste = false;
+
     int cursor_row = 0;
     int cursor_col = 0;
 
@@ -85,15 +88,23 @@ int main(int argc, char *argv[])
                                     break;
                                 }
                     case SDLK_v: {
-                                    if (event.key.keysym.mod && KMOD_CTRL) {
-                                        if (SDL_HasClipboardText()) {
-                                            write(terminal.masterfd,SDL_GetClipboardText(),strlen(SDL_GetClipboardText())+1);
-                                        }
-                                    }
-                                    break;
+                                     if (event.key.keysym.mod & KMOD_CTRL) {
+                                         if (SDL_HasClipboardText()) {
+                                             char *clipboard_text = SDL_GetClipboardText();
+                                             if (bracketed_paste) {
+                                                char final_text[strlen(clipboard_text)+12];
+                                                snprintf(final_text,strlen(final_text),"\e[200~%s\e[201~",clipboard_text);
+                                                write(terminal.masterfd,final_text,sizeof(final_text));
+                                             }
+                                             else {
+                                                 write(terminal.masterfd,clipboard_text,strlen(clipboard_text));
+                                             }
+                                         }
+                                     }
+                                     break;
                                  }
                     default:
-                                break;
+                                 break;
                 }
             }
             if (event.type == SDL_TEXTINPUT) {
@@ -132,11 +143,13 @@ int main(int argc, char *argv[])
                                 cursor_row = 0;
                                 SDL2_BEGIN_FRAME(conf.renderer,0,0,0,255);
                                 memset(screen,0,sizeof(screen));
+                                i += 4;
                             }
-                        } else if (buff[i+2] == 0x33) {
+                        }if (buff[i+2] == 0x33) {
 
                             if(buff[i+3] == 0x4A) {
                                 // move cursor to left..
+                                i += 4;
                                 cursor_col = 0;
                                 cursor_row = 0;
                                 SDL2_BEGIN_FRAME(conf.renderer,0,0,0,255);
@@ -149,12 +162,13 @@ int main(int argc, char *argv[])
                                 if(buff[i+4] == 0x30) {
                                     if (buff[i+5] == 0x30) {
                                         if (buff [i+6] == 0x34) {
-                                            // [?2004
-                                            // char hex[5] = {0x3f,0x32,0x30,0x30,0x34};
-                                            if (SDL_HasClipboardText()) {
-                                                char *text = SDL_GetClipboardText();
-                                                char final_text[strlen(text)+13];
-                                                snprintf(final_text,sizeof(final_text),"\e[200~%s\e[201~",text);
+                                            if (buff[i+7] == 0x68) {
+                                                // [?2004h
+                                                bracketed_paste = true;
+                                                i += 8;
+                                            } else if (buff[i+7] == 0x6C) {
+                                                bracketed_paste = false;
+                                                i += 8;
                                             }
                                         }
                                     }
