@@ -93,10 +93,10 @@ int main(int argc, char *argv[]) {
                                          if (SDL_HasClipboardText()) {
                                              char *clipboard_text = SDL_GetClipboardText();
                                              if (bracketed_paste) {
-                                                 char final_text[strlen(clipboard_text) + 12];
-                                                 /* BUG: snprintf() is not wrapping text properly */
-                                                 snprintf(final_text,strlen(final_text), "\e[200~%s\e[201~",clipboard_text);
-                                                 write(terminal.masterfd, final_text,strlen(final_text));
+                                                 size_t len = strlen(clipboard_text);
+                                                 char final_text[len + 13];
+                                                 snprintf(final_text, len + 13,"\e[200~%s\e[201~",clipboard_text);
+                                                 write(terminal.masterfd, final_text, strlen(final_text));
                                              } else {
                                                  write(terminal.masterfd, clipboard_text,strlen(clipboard_text));
                                              }
@@ -172,6 +172,16 @@ int main(int argc, char *argv[]) {
                             }
                         }
 
+
+                        /* idk what to do with \e[7m and \e[27m */
+                        if (final_byte == 'm') {
+                            if (strcmp(param,"7"))  {
+                                i += final_idx - i+1;
+                            }
+                            else if (strcmp(param,"27"))  {
+                                i += final_idx - i+1;
+                            }
+                        }
                     }
                 } else if (buff[i] == '\b' || buff[i] == 0x08 || buff[i] == 0x07) {
                     if (cursor_col > 0)
