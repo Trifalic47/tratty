@@ -44,7 +44,7 @@ char * get_param(char *ansi,int start_idx,int final_idx) {
     // printf("start_idx:%d , final_idx: %d , param_size: %d\n",start_idx,final_idx,(final_idx-start_idx)+1);
 
     int j = 0;
-    for (int i = start_idx;i <= final_idx;i++) {
+    for (int i = start_idx+1;i < final_idx;i++) {
         param[j] = ansi[i];
         j++;
     }

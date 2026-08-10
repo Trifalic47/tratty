@@ -145,7 +145,19 @@ int main(int argc, char *argv[]) {
                 final_idx++;
             }
             char *param = get_param(buff, i + 1, final_idx);
-            printf("%s\n",param);
+            char final_byte = buff[final_idx];
+            // printf("param:%s \t final_byte: %c\n",param,final_byte);
+
+            if (final_byte == 'J') {
+                if (strcmp(param,"2")) {
+                    cursor_col = 0;
+                    cursor_row = 0;
+                    SDL2_BEGIN_FRAME(conf.renderer,0,0,0,255);
+                    memset(screen,0,sizeof(screen));
+                    i += final_idx - i+1;
+                }
+            }
+
           }
         } else if (buff[i] == '\b' || buff[i] == 0x08 || buff[i] == 0x07) {
             if (cursor_col > 0)
