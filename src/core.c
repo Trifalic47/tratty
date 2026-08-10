@@ -38,14 +38,13 @@ struct init_struct terminal_init(void) {
     return init;
 }
 
-char * get_param(char *ansi,int idx) {
+char * get_param(char *ansi,int start_idx,int final_idx) {
     char final_byte = ansi[strlen(ansi)-1];
-    int start_index = idx+1;
-    int final_index = strlen(ansi)-2;
+    char *param = (char*)malloc((final_idx-start_idx)+1);
+    // printf("start_idx:%d , final_idx: %d , param_size: %d\n",start_idx,final_idx,(final_idx-start_idx)+1);
 
-    char *param = (char*)malloc(sizeof(char) * 10);
     int j = 0;
-    for (int i = start_index;i <= final_index;i++) {
+    for (int i = start_idx;i <= final_idx;i++) {
         param[j] = ansi[i];
         j++;
     }

@@ -19,4 +19,4 @@ struct init_struct {
 
 void enableRawMode(void);
 struct init_struct terminal_init(void);
-char * get_param(char *ansi,int idx);
+char * get_param(char *ansi,int start_idx,int final_idx);
